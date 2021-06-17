@@ -14,31 +14,31 @@ import (
 )
 
 // Params returns the param on route
-func (w *response) Params(p string) string {
-	s, _ := url.PathUnescape(chi.URLParam(w.req, strings.TrimPrefix(p, ":")))
+func (r *request) Params(p string) string {
+	s, _ := url.PathUnescape(chi.URLParam(r.req, strings.TrimPrefix(p, ":")))
 	return s
 }
 
 // ParamsInt returns the param on route as int
-func (w *response) ParamsInt(p string) int {
-	v, _ := strconv.ParseInt(w.Params(p), 10, 0)
+func (r *request) ParamsInt(p string) int {
+	v, _ := strconv.ParseInt(r.Params(p), 10, 0)
 	return int(v)
 }
 
 // ParamsInt64 returns the param on route as int64
-func (w *response) ParamsInt64(p string) int64 {
-	v, _ := strconv.ParseInt(w.Params(p), 10, 64)
+func (r *request) ParamsInt64(p string) int64 {
+	v, _ := strconv.ParseInt(r.Params(p), 10, 64)
 	return v
 }
 
 // ParamsFloat64 returns the param on route as float64
-func (w *response) ParamsFloat64(name string) float64 {
-	v, _ := strconv.ParseFloat(w.Params(name), 64)
+func (r *request) ParamsFloat64(name string) float64 {
+	v, _ := strconv.ParseFloat(r.Params(name), 64)
 	return v
 }
 
 // SetParams set params into routes
-func (w *response) SetParams(k, v string) {
-	chiCtx := chi.RouteContext(w.req.Context())
+func (r *request) SetParams(k, v string) {
+	chiCtx := chi.RouteContext(r.req.Context())
 	chiCtx.URLParams.Add(strings.TrimPrefix(k, ":"), url.PathEscape(v))
 }

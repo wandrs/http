@@ -5,14 +5,13 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/unrolled/render"
 )
 
 type ResponseWriter interface {
 	http.ResponseWriter
-	R() *http.Request
+	R() Request
 
 	// render functions
 	TemplateLookup(t string) *template.Template
@@ -25,27 +24,6 @@ type ResponseWriter interface {
 	XML(status int, v interface{})
 	Error(status int, contents ...string)
 
-	// url path parameters
-	Params(p string) string
-	ParamsInt(p string) int
-	ParamsInt64(p string) int64
-	ParamsFloat64(name string) float64
-	SetParams(k, v string)
-
-	// query parameters
-	Query(key string, defaults ...string) string
-	QueryTrim(key string, defaults ...string) string
-	QueryStrings(key string, defaults ...[]string) []string
-	QueryInt(key string, defaults ...int) int
-	QueryInt64(key string, defaults ...int64) int64
-	QueryBool(key string, defaults ...bool) bool
-
-	// request.Context() methods
-	Deadline() (deadline time.Time, ok bool)
-	Done() <-chan struct{}
-	Err() error
-	Value(key interface{}) interface{}
-
 	// misc render/response functions
 	Redirect(location string, status ...int)
 	RedirectToFirst(appURL, appSubURL string, location ...string)
@@ -56,7 +34,7 @@ type ResponseWriter interface {
 
 type response struct {
 	http.ResponseWriter
-	req *http.Request
+	req Request
 	r   *render.Render
 }
 
@@ -65,12 +43,12 @@ var _ ResponseWriter = &response{}
 func NewResponseWriter(w http.ResponseWriter, req *http.Request, r *render.Render) ResponseWriter {
 	return &response{
 		ResponseWriter: w,
-		req:            req,
+		req:            &request{req: req},
 		r:              r,
 	}
 }
 
-func (w *response) R() *http.Request {
+func (w *response) R() Request {
 	return w.req
 }
 
