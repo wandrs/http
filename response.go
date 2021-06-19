@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/unrolled/render"
 )
 
@@ -25,6 +26,12 @@ type ResponseWriter interface {
 	Error(status int, contents ...string)
 
 	// misc render/response functions
+	Written() bool
+	// Status returns the HTTP status of the request, or 0 if one has not
+	// yet been sent.
+	Status() int
+	// BytesWritten returns the total number of bytes sent to the client.
+	BytesWritten() int
 	Redirect(location string, status ...int)
 	RedirectToFirst(appURL, appSubURL string, location ...string)
 	HTMLString(name string, binding interface{}, htmlOpt ...render.HTMLOptions) (string, error)
@@ -104,4 +111,29 @@ func (w *response) Error(status int, contents ...string) {
 		v = contents[0]
 	}
 	http.Error(w, v, status)
+}
+
+// Written returns true if there are something sent to web browser
+func (w *response) Written() bool {
+	if ww, ok := http.ResponseWriter(w).(middleware.WrapResponseWriter); ok {
+		return ww.Status() > 0
+	}
+	panic("unsupported method, r.Use(middleware.Logger) to implement")
+}
+
+// Status returns the HTTP status of the request, or 0 if one has not
+// yet been sent.
+func (w *response) Status() int {
+	if ww, ok := http.ResponseWriter(w).(middleware.WrapResponseWriter); ok {
+		return ww.Status()
+	}
+	panic("unsupported method, r.Use(middleware.Logger) to implement")
+}
+
+// BytesWritten returns the total number of bytes sent to the client.
+func (w *response) BytesWritten() int {
+	if ww, ok := http.ResponseWriter(w).(middleware.WrapResponseWriter); ok {
+		return ww.BytesWritten()
+	}
+	panic("unsupported method, r.Use(middleware.Logger) to implement")
 }
