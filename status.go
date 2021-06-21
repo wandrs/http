@@ -34,7 +34,7 @@ type statusError interface {
 // ErrorToAPIStatus converts an error to an metav1.Status object.
 func ErrorToAPIStatus(err error) *metav1.Status {
 	// WARNING: https://stackoverflow.com/a/46275411/244009
-	if err == nil || reflect.ValueOf(err).IsNil() {
+	if err == nil || reflect.ValueOf(err).IsNil() /*for error wrapper interfaces*/ {
 		return &metav1.Status{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Status",
