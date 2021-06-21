@@ -130,7 +130,7 @@ func (w *response) Error(status int, contents ...string) {
 
 // Written returns true if there are something sent to web browser
 func (w *response) Written() bool {
-	if ww, ok := http.ResponseWriter(w).(middleware.WrapResponseWriter); ok {
+	if ww, ok := w.ResponseWriter.(middleware.WrapResponseWriter); ok {
 		return ww.Status() > 0
 	}
 	panic("unsupported method, r.Use(middleware.Logger) to implement")
@@ -139,7 +139,7 @@ func (w *response) Written() bool {
 // Status returns the HTTP status of the request, or 0 if one has not
 // yet been sent.
 func (w *response) Status() int {
-	if ww, ok := http.ResponseWriter(w).(middleware.WrapResponseWriter); ok {
+	if ww, ok := w.ResponseWriter.(middleware.WrapResponseWriter); ok {
 		return ww.Status()
 	}
 	panic("unsupported method, r.Use(middleware.Logger) to implement")
@@ -147,7 +147,7 @@ func (w *response) Status() int {
 
 // BytesWritten returns the total number of bytes sent to the client.
 func (w *response) BytesWritten() int {
-	if ww, ok := http.ResponseWriter(w).(middleware.WrapResponseWriter); ok {
+	if ww, ok := w.ResponseWriter.(middleware.WrapResponseWriter); ok {
 		return ww.BytesWritten()
 	}
 	panic("unsupported method, r.Use(middleware.Logger) to implement")
