@@ -19,6 +19,7 @@ package http
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,8 @@ type statusError interface {
 
 // ErrorToAPIStatus converts an error to an metav1.Status object.
 func ErrorToAPIStatus(err error) *metav1.Status {
-	if err == nil {
+	// WARNING: https://stackoverflow.com/a/46275411/244009
+	if err == nil || reflect.ValueOf(err).IsNil() {
 		return &metav1.Status{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Status",
