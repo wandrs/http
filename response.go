@@ -1,7 +1,6 @@
 package http
 
 import (
-	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -10,8 +9,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-logr/logr"
 	"github.com/unrolled/render"
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
 )
 
 type ResponseWriter interface {
@@ -57,19 +54,12 @@ type response struct {
 
 var _ ResponseWriter = &response{}
 
-func NewResponseWriter(w http.ResponseWriter, req *http.Request, r *render.Render, l ...logr.Logger) ResponseWriter {
-	var log logr.Logger
-	if len(l) > 0 {
-		log = l[0]
-	} else {
-		klog.InitFlags(flag.NewFlagSet("wandrs", flag.ContinueOnError))
-		log = klogr.New().WithName("wandrs")
-	}
+func NewResponseWriter(w http.ResponseWriter, req *http.Request, r *render.Render, sink logr.LogSink) ResponseWriter {
 	return &response{
 		ResponseWriter: w,
 		req:            &request{req: req},
 		r:              r,
-		log:            log,
+		log:            logr.New(sink),
 	}
 }
 
@@ -137,6 +127,9 @@ func (w *response) XML(status int, v interface{}) {
 	}
 }
 
+// Error if length of contents is more than 1, then the
+// first content will be considered as title and the
+// second content will be considered as the error
 func (w *response) Error(status int, contents ...interface{}) {
 	var v = http.StatusText(status)
 
@@ -156,7 +149,7 @@ func (w *response) Error(status int, contents ...interface{}) {
 		v = fmt.Sprintf("%s", obj)
 	}
 
-	if len(title) > 0 {
+	if len(title) > 0 && w.log.GetSink() != nil {
 		// log the error with the title
 		w.log.Error(fmt.Errorf(v), title)
 	}
