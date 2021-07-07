@@ -1,12 +1,17 @@
 package http
 
 import (
+	"flag"
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-logr/logr"
 	"github.com/unrolled/render"
+	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/klogr"
 )
 
 type ResponseWriter interface {
@@ -22,7 +27,7 @@ type ResponseWriter interface {
 	JSONP(status int, callback string, v interface{})
 	Text(status int, v string)
 	XML(status int, v interface{})
-	Error(status int, contents ...string)
+	Error(status int, contents ...interface{})
 
 	// extended ResponseWriter methods
 	Written() bool
@@ -47,15 +52,24 @@ type response struct {
 	http.ResponseWriter
 	req Request
 	r   *render.Render
+	log logr.Logger
 }
 
 var _ ResponseWriter = &response{}
 
-func NewResponseWriter(w http.ResponseWriter, req *http.Request, r *render.Render) ResponseWriter {
+func NewResponseWriter(w http.ResponseWriter, req *http.Request, r *render.Render, l ...logr.Logger) ResponseWriter {
+	var log logr.Logger
+	if len(l) > 0 {
+		log = l[0]
+	} else {
+		klog.InitFlags(flag.NewFlagSet("wandrs", flag.ContinueOnError))
+		log = klogr.New().WithName("wandrs")
+	}
 	return &response{
 		ResponseWriter: w,
 		req:            &request{req: req},
 		r:              r,
+		log:            log,
 	}
 }
 
@@ -123,11 +137,30 @@ func (w *response) XML(status int, v interface{}) {
 	}
 }
 
-func (w *response) Error(status int, contents ...string) {
+func (w *response) Error(status int, contents ...interface{}) {
 	var v = http.StatusText(status)
-	if len(contents) > 0 {
-		v = contents[0]
+
+	var title string
+	var obj interface{}
+
+	if len(contents) > 1 {
+		title = contents[0].(string)
+		obj = contents[1]
+	} else if len(contents) > 0 {
+		obj = contents[0]
 	}
+
+	if err, ok := obj.(error); ok {
+		v = err.Error()
+	} else {
+		v = fmt.Sprintf("%s", obj)
+	}
+
+	if len(title) > 0 {
+		// log the error with the title
+		w.log.Error(fmt.Errorf(v), title)
+	}
+
 	http.Error(w, v, status)
 }
 
