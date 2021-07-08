@@ -114,20 +114,20 @@ func (w *response) APIError(err error) int {
 	return code
 }
 
-func toStatusReason(statusReason metav1.StatusReason, reason ...string) metav1.StatusReason {
-	if len(reason) > 0 {
-		statusReason = metav1.StatusReason(reason[0])
+func toStatusReason(statusReason metav1.StatusReason, message ...string) metav1.StatusReason {
+	if len(message) > 0 {
+		statusReason = metav1.StatusReason(message[0])
 	}
 	return statusReason
 }
 
 // NewInternalError returns an error indicating the item is invalid and cannot be processed.
-func NewInternalError(err error, reason ...string) *kerr.StatusError {
+func NewInternalError(err error, message ...string) *kerr.StatusError {
 	return &kerr.StatusError{
 		ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Code:   http.StatusInternalServerError,
-			Reason: toStatusReason(metav1.StatusReasonInternalError, reason...),
+			Reason: toStatusReason(metav1.StatusReasonInternalError, message...),
 			Details: &metav1.StatusDetails{
 				Causes: []metav1.StatusCause{{Message: err.Error()}},
 			},
@@ -136,12 +136,12 @@ func NewInternalError(err error, reason ...string) *kerr.StatusError {
 }
 
 // NewNotFound returns a new error which indicates that the requested resource was not found.
-func NewNotFound(err error, reason ...string) *kerr.StatusError {
+func NewNotFound(err error, message ...string) *kerr.StatusError {
 	return &kerr.StatusError{
 		ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Code:   http.StatusNotFound,
-			Reason: toStatusReason(metav1.StatusReasonNotFound, reason...),
+			Reason: toStatusReason(metav1.StatusReasonNotFound, message...),
 			Details: &metav1.StatusDetails{
 				Causes: []metav1.StatusCause{{Message: err.Error()}},
 			},
@@ -151,12 +151,12 @@ func NewNotFound(err error, reason ...string) *kerr.StatusError {
 }
 
 // NewAlreadyExists returns an error indicating the item requested already exists.
-func NewAlreadyExists(err error, reason ...string) *kerr.StatusError {
+func NewAlreadyExists(err error, message ...string) *kerr.StatusError {
 	return &kerr.StatusError{
 		ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Code:   http.StatusConflict,
-			Reason: toStatusReason(metav1.StatusReasonAlreadyExists, reason...),
+			Reason: toStatusReason(metav1.StatusReasonAlreadyExists, message...),
 			Details: &metav1.StatusDetails{
 				Causes: []metav1.StatusCause{{Message: err.Error()}},
 			},
@@ -196,12 +196,12 @@ func NewForbidden(reason string) *kerr.StatusError {
 }
 
 // NewConflict returns an error indicating the item can't be updated as provided.
-func NewConflict(err error, reason ...string) *kerr.StatusError {
+func NewConflict(err error, message ...string) *kerr.StatusError {
 	return &kerr.StatusError{
 		ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Code:   http.StatusConflict,
-			Reason: toStatusReason(metav1.StatusReasonConflict, reason...),
+			Reason: toStatusReason(metav1.StatusReasonConflict, message...),
 			Details: &metav1.StatusDetails{
 				Causes: []metav1.StatusCause{{Message: err.Error()}},
 			},
@@ -221,12 +221,12 @@ func NewResourceExpired(message string) *kerr.StatusError {
 }
 
 // NewBadRequest creates an error that indicates that the request is invalid and can not be processed.
-func NewBadRequest(err error, reason ...string) *kerr.StatusError {
+func NewBadRequest(err error, message ...string) *kerr.StatusError {
 	return &kerr.StatusError{
 		ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Code:   http.StatusBadRequest,
-			Reason: toStatusReason(metav1.StatusReasonBadRequest, reason...),
+			Reason: toStatusReason(metav1.StatusReasonBadRequest, message...),
 			Details: &metav1.StatusDetails{
 				Causes: []metav1.StatusCause{{Message: err.Error()}},
 			},
@@ -235,12 +235,12 @@ func NewBadRequest(err error, reason ...string) *kerr.StatusError {
 }
 
 // NewMethodNotSupported returns an error indicating the requested action is not supported.
-func NewMethodNotSupported(err error, reason ...string) *kerr.StatusError {
+func NewMethodNotSupported(err error, message ...string) *kerr.StatusError {
 	return &kerr.StatusError{
 		ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Code:   http.StatusMethodNotAllowed,
-			Reason: toStatusReason(metav1.StatusReasonMethodNotAllowed, reason...),
+			Reason: toStatusReason(metav1.StatusReasonMethodNotAllowed, message...),
 			Details: &metav1.StatusDetails{
 				Causes: []metav1.StatusCause{{Message: err.Error()}},
 			},
@@ -249,12 +249,12 @@ func NewMethodNotSupported(err error, reason ...string) *kerr.StatusError {
 }
 
 // NewStatusError returns a generic status type error
-func NewStatusError(status int, err error, reason ...string) *kerr.StatusError {
+func NewStatusError(status int, err error, message ...string) *kerr.StatusError {
 	return &kerr.StatusError{
 		ErrStatus: metav1.Status{
 			Status: metav1.StatusFailure,
 			Code:   int32(status),
-			Reason: toStatusReason(metav1.StatusReason(http.StatusText(status)), reason...),
+			Reason: toStatusReason(metav1.StatusReason(http.StatusText(status)), message...),
 			Details: &metav1.StatusDetails{
 				Causes: []metav1.StatusCause{{Message: err.Error()}},
 			},
