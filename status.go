@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"strconv"
 
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 )
@@ -68,7 +69,7 @@ func ErrorToAPIStatus(err error) *metav1.Status {
 		}
 		status.Kind = "Status"
 		status.APIVersion = "v1"
-		//TODO: check for invalid responses
+		// TODO: check for invalid responses
 		return &status
 	default:
 		status := http.StatusInternalServerError
@@ -106,6 +107,166 @@ func (w *response) APIError(err error) int {
 		return code
 	}
 
+	if w.log.GetSink() != nil {
+		w.log.Error(err, string(status.Reason))
+	}
 	w.JSON(code, status)
 	return code
+}
+
+func toStatusReason(statusReason metav1.StatusReason, message ...string) metav1.StatusReason {
+	if len(message) > 0 {
+		statusReason = metav1.StatusReason(message[0])
+	}
+	return statusReason
+}
+
+// NewInternalError returns an error indicating the item is invalid and cannot be processed.
+func NewInternalError(err error, message ...string) *kerr.StatusError {
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status: metav1.StatusFailure,
+			Code:   http.StatusInternalServerError,
+			Reason: toStatusReason(metav1.StatusReasonInternalError, message...),
+			Details: &metav1.StatusDetails{
+				Causes: []metav1.StatusCause{{Message: err.Error()}},
+			},
+			Message: fmt.Sprintf("Internal error occurred: %v", err),
+		},
+	}
+}
+
+// NewNotFound returns a new error which indicates that the requested resource was not found.
+func NewNotFound(err error, message ...string) *kerr.StatusError {
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status: metav1.StatusFailure,
+			Code:   http.StatusNotFound,
+			Reason: toStatusReason(metav1.StatusReasonNotFound, message...),
+			Details: &metav1.StatusDetails{
+				Causes: []metav1.StatusCause{{Message: err.Error()}},
+			},
+			Message: fmt.Sprintf("Resource not found: %v", err),
+		},
+	}
+}
+
+// NewAlreadyExists returns an error indicating the item requested already exists.
+func NewAlreadyExists(err error, message ...string) *kerr.StatusError {
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status: metav1.StatusFailure,
+			Code:   http.StatusConflict,
+			Reason: toStatusReason(metav1.StatusReasonAlreadyExists, message...),
+			Details: &metav1.StatusDetails{
+				Causes: []metav1.StatusCause{{Message: err.Error()}},
+			},
+			Message: fmt.Sprintf("Resource already exists: %v", err),
+		},
+	}
+}
+
+// NewUnauthorized returns an error indicating the client is not authorized to perform the requested
+// action.
+func NewUnauthorized(reason string) *kerr.StatusError {
+	message := reason
+	if len(message) == 0 {
+		message = "not authorized"
+	}
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status:  metav1.StatusFailure,
+			Code:    http.StatusUnauthorized,
+			Reason:  metav1.StatusReasonUnauthorized,
+			Message: message,
+		},
+	}
+}
+
+// NewForbidden returns an error indicating the requested action was forbidden
+func NewForbidden(reason string) *kerr.StatusError {
+	message := reason
+	if len(message) == 0 {
+		message = "not allowed"
+	}
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status:  metav1.StatusFailure,
+			Code:    http.StatusForbidden,
+			Reason:  metav1.StatusReasonForbidden,
+			Message: message,
+		},
+	}
+}
+
+// NewConflict returns an error indicating the item can't be updated as provided.
+func NewConflict(err error, message ...string) *kerr.StatusError {
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status: metav1.StatusFailure,
+			Code:   http.StatusConflict,
+			Reason: toStatusReason(metav1.StatusReasonConflict, message...),
+			Details: &metav1.StatusDetails{
+				Causes: []metav1.StatusCause{{Message: err.Error()}},
+			},
+			Message: fmt.Sprintf("Operation cannot be fulfilled: %v", err),
+		},
+	}
+}
+
+// NewResourceExpired creates an error that indicates that the requested resource content has expired
+func NewResourceExpired(message string) *kerr.StatusError {
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status:  metav1.StatusFailure,
+			Code:    http.StatusGone,
+			Reason:  metav1.StatusReasonExpired,
+			Message: message,
+		},
+	}
+}
+
+// NewBadRequest creates an error that indicates that the request is invalid and can not be processed.
+func NewBadRequest(err error, message ...string) *kerr.StatusError {
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status: metav1.StatusFailure,
+			Code:   http.StatusBadRequest,
+			Reason: toStatusReason(metav1.StatusReasonBadRequest, message...),
+			Details: &metav1.StatusDetails{
+				Causes: []metav1.StatusCause{{Message: err.Error()}},
+			},
+			Message: fmt.Sprintf("Operation cannot be fulfilled: %v", err),
+		},
+	}
+}
+
+// NewMethodNotSupported returns an error indicating the requested action is not supported.
+func NewMethodNotSupported(err error, message ...string) *kerr.StatusError {
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status: metav1.StatusFailure,
+			Code:   http.StatusMethodNotAllowed,
+			Reason: toStatusReason(metav1.StatusReasonMethodNotAllowed, message...),
+			Details: &metav1.StatusDetails{
+				Causes: []metav1.StatusCause{{Message: err.Error()}},
+			},
+			Message: fmt.Sprintf("Method not supported: %v", err),
+		},
+	}
+}
+
+// NewStatusError returns a generic status type error
+func NewStatusError(status int, err error, message ...string) *kerr.StatusError {
+	return &kerr.StatusError{
+		ErrStatus: metav1.Status{
+			Status: metav1.StatusFailure,
+			Code:   int32(status),
+			Reason: toStatusReason(metav1.StatusReason(http.StatusText(status)), message...),
+			Details: &metav1.StatusDetails{
+				Causes: []metav1.StatusCause{{Message: err.Error()}},
+			},
+			Message: err.Error(),
+		},
+	}
 }
