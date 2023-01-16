@@ -131,13 +131,13 @@ func (w *response) XML(status int, v interface{}) {
 // first content will be considered as title and the
 // second content will be considered as the error
 func (w *response) Error(status int, contents ...interface{}) {
-	var v = http.StatusText(status)
+	v := http.StatusText(status)
 
 	var title string
 	var obj interface{}
 
 	if len(contents) > 1 {
-		title = contents[0].(string)
+		title = fmt.Sprintf("%v", contents[0])
 		obj = contents[1]
 	} else if len(contents) > 0 {
 		obj = contents[0]
@@ -146,7 +146,7 @@ func (w *response) Error(status int, contents ...interface{}) {
 	if err, ok := obj.(error); ok {
 		v = err.Error()
 	} else {
-		v = fmt.Sprintf("%s", obj)
+		v = fmt.Sprintf("%v", obj)
 	}
 
 	if len(title) > 0 && w.log.GetSink() != nil {
