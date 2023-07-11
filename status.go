@@ -107,8 +107,8 @@ func (w *response) APIError(err error) int {
 		return code
 	}
 
-	if w.log.GetSink() != nil {
-		w.log.Error(err, string(status.Reason))
+	if w.logger.GetSink() != nil {
+		w.logger.Error(err, string(status.Reason))
 	}
 	w.JSON(code, status)
 	return code
