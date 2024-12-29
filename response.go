@@ -47,19 +47,19 @@ type ResponseWriter interface {
 
 type response struct {
 	http.ResponseWriter
-	req Request
-	r   *render.Render
-	log logr.Logger
+	req    Request
+	r      *render.Render
+	logger logr.Logger
 }
 
 var _ ResponseWriter = &response{}
 
-func NewResponseWriter(w http.ResponseWriter, req *http.Request, r *render.Render, sink logr.LogSink) ResponseWriter {
+func NewResponseWriter(w http.ResponseWriter, req *http.Request, r *render.Render, logger logr.Logger) ResponseWriter {
 	return &response{
 		ResponseWriter: w,
 		req:            &request{req: req},
 		r:              r,
-		log:            logr.New(sink),
+		logger:         logger,
 	}
 }
 
@@ -149,9 +149,9 @@ func (w *response) Error(status int, contents ...interface{}) {
 		v = fmt.Sprintf("%v", obj)
 	}
 
-	if len(title) > 0 && w.log.GetSink() != nil {
+	if len(title) > 0 && w.logger.GetSink() != nil {
 		// log the error with the title
-		w.log.Error(fmt.Errorf(v), title)
+		w.logger.Error(fmt.Errorf(v), title)
 	}
 
 	http.Error(w, v, status)
