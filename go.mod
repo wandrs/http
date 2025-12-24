@@ -3,7 +3,7 @@ module go.wandrs.dev/http
 go 1.18
 
 require (
-	github.com/go-chi/chi/v5 v5.0.8
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/go-logr/logr v1.2.3
 	github.com/unrolled/render v1.5.0
 	k8s.io/apimachinery v0.25.1
